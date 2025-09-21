@@ -1,0 +1,160 @@
+// Utility functions for handling email data
+
+interface EmailEvent {
+  id: string;
+  email_id: string;
+  email_subject: string;
+  email_sender: string;
+  email_date: string;
+  event_description: string;
+  event_date: string | null;
+  event_time: string | null;
+  event_location: string | null;
+  event_type: string;
+  priority: number;
+}
+
+interface EmailAttachment {
+  filename: string;
+  size_bytes: number;
+  mime_type: string;
+}
+
+export interface Email {
+  id: string;
+  thread_id: string;
+  snippet: string;
+  sender: string;
+  recipient: string;
+  subject: string;
+  date: string;
+  timestamp: string;
+  body_text: string;
+  body_html: string;
+  attachments: EmailAttachment[];
+  summary: string;
+  priority: number;
+  events_extracted: Array<{
+    id: string;
+    event_description: string;
+    event_date: string | null;
+    event_time: string | null;
+    event_location: string | null;
+    event_type: string;
+    priority: number;
+  }>;
+}
+
+export interface EmailMonitorData {
+  monitor_started: string;
+  last_updated: string;
+  total_emails: number;
+  config: {
+    poll_interval: number;
+    enable_summary: boolean;
+    processed_label: string;
+    json_file: string;
+    events_json_file: string;
+    userinfo_file: string;
+    max_content_length: number;
+    summary_retry_attempts: number;
+    summary_retry_delay: number;
+  };
+  emails: Email[];
+}
+
+// Format time to relative time (e.g., "2m ago", "3h ago", "2d ago")
+export const formatRelativeTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) {
+    return 'just now';
+  }
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes}m ago`;
+  }
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  }
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays}d ago`;
+};
+
+// Convert priority number to human-readable format
+export const getPriorityLabel = (priority: number): string => {
+  if (priority >= 4) return 'High';
+  if (priority >= 2) return 'Normal';
+  return 'Low';
+};
+
+// Parse the email's sender name from the "Name <email@example.com>" format
+export const parseSenderName = (sender: string): string => {
+  if (!sender) return 'Unknown Sender';
+  const match = sender.match(/^"?([^"]*?)"?\s*<[^>]+>$/);
+  if (match && match[1]) {
+    return match[1].trim() || 'Unknown Sender';
+  }
+  return sender.split('@')[0];
+};
+
+// Transform the email data for the UI
+export const transformEmailForUI = (email: Email) => {
+  const senderName = parseSenderName(email.sender);
+  return {
+    id: email.id,
+    sender: senderName,
+    senderEmail: email.sender,
+    subject: email.subject || 'No Subject',
+    time: formatRelativeTime(email.timestamp),
+    date: new Date(email.timestamp).toLocaleDateString(),
+    priority: email.priority >= 4 ? 'high' : email.priority >= 2 ? 'normal' : 'low',
+    content: email.body_text || email.snippet || '',
+    summary: email.summary || email.snippet || 'No summary available',
+    attachments: (email.attachments || []).map(att => ({
+      id: att.filename,
+      name: att.filename,
+      type: att.mime_type.split('/').pop() || 'file',
+      size: att.size_bytes,
+      url: '#'
+    })),
+    hasAttachments: (email.attachments && email.attachments.length > 0) || false
+  };
+};
+
+// Mock implementation for development
+export const fetchEmailData = async (): Promise<EmailMonitorData> => {
+  try {
+    const response = await fetch('/api/emails');
+    if (!response.ok) {
+      throw new Error('Failed to fetch email data');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching email data:', error);
+    // Return empty data structure if fetch fails
+    return {
+      monitor_started: new Date().toISOString(),
+      last_updated: new Date().toISOString(),
+      total_emails: 0,
+      config: {
+        poll_interval: 30,
+        enable_summary: true,
+        processed_label: 'processed',
+        json_file: 'emails_monitor.json',
+        events_json_file: 'email_events.json',
+        userinfo_file: 'userinfo.json',
+        max_content_length: 30000,
+        summary_retry_attempts: 3,
+        summary_retry_delay: 2
+      },
+      emails: []
+    };
+  }
+};

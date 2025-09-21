@@ -1,0 +1,20 @@
+🔄 Starting Enhanced Gmail Email Monitor...
+⚙️  Configuration:
+   📊 Poll interval: 30 seconds
+   🧠 AI Summary enabled: True
+   🔄 Summary retry attempts: 3
+   ⏳ Summary retry delay: 2 seconds
+   🏷️  Processed label: processed
+   📄 Email database: emails_monitor.json
+   📅 Events database: email_events.json
+🔑 Cerebras API Key found: csk-xfftk3...59kt
+✅ Cerebras Cloud SDK initialized
+📋 Found existing label: processed
+📄 Loaded existing data: 14 emails
+📅 Loaded existing events data: 29 events
+
+✅ Monitor started! Press Ctrl+C to stop.
+🔍 Watching for new emails...
+📧 Current email count: 14
+📅 Current events count: 29
+.............................................

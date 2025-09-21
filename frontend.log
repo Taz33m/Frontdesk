@@ -1,0 +1,36 @@
+
+> Dashboard Layout Design@0.1.0 dev
+> vite
+
+▲ [WARNING] Duplicate key "server" in object literal [duplicate-object-key]
+
+    vite.config.ts:83:4:
+      83 │     server: {
+         ╵     ~~~~~~
+
+  The original key "server" is here:
+
+    vite.config.ts:13:4:
+      13 │     server: {
+         ╵     ~~~~~~
+
+
+  VITE v6.3.5  ready in 193 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: use --host to expose
+12:58:43 AM [vite] vite.config.ts changed, restarting server...
+✘ [ERROR] Expected "}" but found ")"
+
+    vite.config.ts:83:3:
+      83 │   });
+         │    ^
+         ╵    }
+
+failed to load config from /Users/tazeemmahashin/Downloads/Deskv1/vite.config.ts
+12:58:43 AM [vite] Build failed with 1 error:
+vite.config.ts:83:3: ERROR: Expected "}" but found ")"
+12:58:43 AM [vite] server restart failed
+12:59:09 AM [vite] vite.config.ts changed, restarting server...
+12:59:09 AM [vite] vite.config.ts changed, restarting server...
+12:59:09 AM [vite] server restarted.

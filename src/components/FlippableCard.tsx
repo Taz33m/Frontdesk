@@ -12,6 +12,8 @@ interface FlippableCardProps {
   expandedContent?: ReactNode;
   className?: string;
   onExpand?: () => void;
+  isFlipped?: boolean;
+  onFlipChange?: (isFlipped: boolean) => void;
 }
 
 export function FlippableCard({ 
@@ -22,9 +24,13 @@ export function FlippableCard({
   backContent, 
   expandedContent,
   className = "",
-  onExpand
+  onExpand,
+  isFlipped: controlledIsFlipped,
+  onFlipChange
 }: FlippableCardProps) {
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [internalIsFlipped, setInternalIsFlipped] = useState(false);
+  const isControlled = controlledIsFlipped !== undefined;
+  const isFlipped = isControlled ? controlledIsFlipped : internalIsFlipped;
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -49,7 +55,11 @@ export function FlippableCard({
     
     // Only flip if not clicking on an interactive element
     if (!isInteractiveElement) {
-      setIsFlipped(!isFlipped);
+      const newValue = !isFlipped;
+      if (!isControlled) {
+        setInternalIsFlipped(newValue);
+      }
+      onFlipChange?.(newValue);
     }
   };
 

@@ -38,3 +38,4 @@ Thumbs.db
 # Gmail API credentials
 mails_widget/credentials.json
 mails_widget/token.json
+mails_widget/token.json

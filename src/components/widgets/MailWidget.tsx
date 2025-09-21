@@ -1,16 +1,25 @@
-import React, { useState, useEffect } from "react";
-import { Mail, Star, Archive, Trash2, ChevronDown, ChevronUp, Sparkles, X, Paperclip, Download, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Mail, Star, Archive, Trash2, ChevronDown, ChevronUp, Sparkles, X, Paperclip, Download, Loader2, Send, ArrowLeft } from "lucide-react";
 import { FlippableCard } from "../FlippableCard";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
+import { Textarea } from "../ui/textarea";
 import { fetchEmailData, transformEmailForUI, TransformedEmail } from "../../lib/emailUtils";
 
 // Use the TransformedEmail interface from emailUtils
 type Email = TransformedEmail;
 
-// Simple toast implementation
-const toast = (options: { title: string; description: string; variant?: string }) => {
-  console.log(`[${options.title}] ${options.description}`);
+// Toast implementation
+const toast = (options: { title: string; description: string; variant?: 'default' | 'destructive' | 'success' }) => {
+  const variant = options.variant || 'default';
+  
+  if (variant === 'destructive') {
+    console.error(`[Error] ${options.title}: ${options.description}`);
+  } else if (variant === 'success') {
+    console.log(`[Success] ${options.title}: ${options.description}`);
+  } else {
+    console.log(`[${options.title}] ${options.description}`);
+  }
 };
 
 interface MailWidgetProps {
@@ -19,7 +28,77 @@ interface MailWidgetProps {
 }
 
 // Email View Modal Component
-const EmailViewModal: React.FC<{ email: Email | null; onClose: () => void }> = ({ email, onClose }) => {
+const EmailViewModal: React.FC<{ 
+  email: Email | null; 
+  onClose: () => void;
+  onReplySent?: () => void;
+}> = ({ email, onClose, onReplySent }) => {
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleReplyClick = () => {
+    setIsReplying(true);
+    // Set default reply content with quoted text
+    setReplyContent(`\n\n\n---------- Original Message ----------\nFrom: ${email?.sender}\nDate: ${email?.date}\nSubject: ${email?.subject}\n\n${email?.content}`);
+    // Focus the textarea after a small delay to ensure it's rendered
+    setTimeout(() => textareaRef.current?.focus(), 100);
+  };
+
+  const handleSendReply = async () => {
+    if (!email || !replyContent.trim()) return;
+    
+    setIsSending(true);
+    try {
+      const response = await fetch('/api/send-reply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: email.sender,
+          subject: `Re: ${email.subject}`,
+          message: replyContent.trim(),
+          threadId: email.threadId,
+          references: email.references || email.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send reply');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Your reply has been sent successfully!',
+      });
+      
+      // Reset form and close the reply section
+      setReplyContent('');
+      setIsReplying(false);
+      
+      // Notify parent component that a reply was sent
+      if (onReplySent) onReplySent();
+      
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to send reply',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleCancelReply = () => {
+    setIsReplying(false);
+    setReplyContent('');
+  };
   // Don't render if no email is provided
   if (!email) {
     return null;
@@ -120,14 +199,85 @@ const EmailViewModal: React.FC<{ email: Email | null; onClose: () => void }> = (
           )}
         </div>
         
+        {/* Reply Form */}
+        {isReplying && (
+          <div className="p-4 border-t">
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-sm font-medium">Reply to {email?.sender}</h4>
+              <Button 
+                variant="ghost" 
+                size="xs" 
+                onClick={handleCancelReply}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <Textarea
+              ref={textareaRef}
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+              placeholder="Type your reply here..."
+              className="min-h-[120px] mb-3"
+              disabled={isSending}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCancelReply}
+                disabled={isSending}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handleSendReply}
+                disabled={isSending || !replyContent.trim()}
+                className="flex items-center"
+              >
+                {isSending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Footer Actions */}
-        <div className="p-4 border-t flex justify-end space-x-2">
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Close
-          </Button>
-          <Button variant="default" size="sm">
-            Reply
-          </Button>
+        <div className="p-4 border-t flex justify-between items-center">
+          <div className="text-xs text-gray-500">
+            {email?.date}
+          </div>
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onClose}
+              disabled={isSending}
+            >
+              Close
+            </Button>
+            {!isReplying && (
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handleReplyClick}
+                disabled={isSending}
+              >
+                Reply
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

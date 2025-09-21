@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import React, { ReactNode } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { Button } from "./ui/button";
 

@@ -23,6 +23,7 @@ interface EmailAttachment {
 export interface Email {
   id: string;
   thread_id: string;
+  references?: string;
   snippet: string;
   sender: string;
   recipient: string;
@@ -106,6 +107,8 @@ export const parseSenderName = (sender: string): string => {
 // Interface for the transformed email data used in the UI
 export interface TransformedEmail {
   id: string;
+  threadId?: string;
+  references?: string;
   sender: string;
   senderEmail: string;
   subject: string;
@@ -129,6 +132,8 @@ export const transformEmailForUI = (email: Email): TransformedEmail => {
   // Ensure we have valid values for required fields
   const safeEmail = {
     id: email.id || 'unknown-id',
+    threadId: email.thread_id,
+    references: email.references || email.id,
     sender: email.sender || 'Unknown Sender',
     subject: email.subject || 'No Subject',
     timestamp: email.timestamp || new Date().toISOString(),

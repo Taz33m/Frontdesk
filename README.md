@@ -1,11 +1,12 @@
 
-  # Dashboard Layout Design
+  # FrontDesk
 
-  This is a code bundle for Dashboard Layout Design. The original project is available at https://www.figma.com/design/Iz5zF8dSkii6OY0js5kEef/Dashboard-Layout-Design.
+Your Personal Command Center. Your FrontDesk. Get Sh*t Done. 
 
   ## Running the code
 
-  Run `npm i` to install the dependencies.
+'npm run dev:all'
 
-  Run `npm run dev` to start the development server.
-  
+  ## Killing the code
+
+'pkill -f “node server.js” && pkill -f “vite”'  

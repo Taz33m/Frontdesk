@@ -1,109 +1,169 @@
-import { Calendar, Clock, Shield, Mail, RotateCcw, Video, MapPin, Users, Plus } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { 
+  Calendar as CalendarIcon, 
+  Clock, 
+  ChevronLeft, 
+  ChevronRight, 
+  Video, 
+  MapPin, 
+  Users, 
+  Plus,
+  Loader2,
+  AlertCircle,
+  Shield
+} from "lucide-react";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Separator } from "../ui/separator";
 
-const timeSlots = Array.from({ length: 12 }, (_, i) => {
-  const hour = i + 8; // Start from 8 AM
-  const time12 = hour > 12 ? `${hour - 12}:00 PM` : `${hour}:00 AM`;
-  return {
-    time: time12,
-    hour24: `${hour.toString().padStart(2, '0')}:00`,
-    events: []
-  };
-});
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  type: string;
+  attendees?: string[];
+  location?: string;
+  description?: string;
+  priority?: 'low' | 'medium' | 'high';
+  color?: string; // Added missing color property
+  duration?: number; // Added duration in minutes
+}
 
-const todayEvents = [
-  {
-    id: 1,
-    title: "Team Standup",
-    time: "10:00 AM - 10:30 AM",
-    startHour: 10,
-    duration: 0.5,
-    type: "meeting",
-    attendees: ["SC", "JM", "AR", "MT"],
-    location: "Conference Room A",
-    description: "Daily team synchronization meeting to discuss progress and blockers",
-    priority: "medium",
-    color: "bg-blue-100 border-blue-300 text-blue-800"
-  },
-  {
-    id: 2,
-    title: "Client Presentation",
-    time: "2:00 PM - 3:00 PM", 
-    startHour: 14,
-    duration: 1,
-    type: "important",
-    attendees: ["SC", "AR"],
-    location: "Zoom",
-    description: "Quarterly review presentation for our key client",
-    priority: "high",
-    color: "bg-red-100 border-red-300 text-red-800"
-  },
-  {
-    id: 3,
-    title: "Code Review Session",
-    time: "4:00 PM - 5:00 PM",
-    startHour: 16,
-    duration: 1,
-    type: "work",
-    attendees: ["JM", "Dev Team"],
-    location: "Development Lab",
-    description: "Review pull requests for the authentication module",
-    priority: "medium",
-    color: "bg-green-100 border-green-300 text-green-800"
-  },
-  {
-    id: 4,
-    title: "Focus Time - Deep Work",
-    time: "9:00 AM - 11:00 AM",
-    startHour: 9,
-    duration: 2,
-    type: "focus",
-    attendees: ["You"],
-    location: "Your Office",
-    description: "Dedicated time for deep work on the quarterly report",
-    priority: "high",
-    color: "bg-purple-100 border-purple-300 text-purple-800"
-  },
-  {
-    id: 5,
-    title: "Lunch with Marketing Team",
-    time: "12:00 PM - 1:00 PM",
-    startHour: 12,
-    duration: 1,
-    type: "social",
-    attendees: ["MT", "Sarah", "Alex"],
-    location: "Downtown Bistro", 
-    description: "Team lunch to discuss upcoming campaign strategies",
-    priority: "low",
-    color: "bg-yellow-100 border-yellow-300 text-yellow-800"
-  }
-];
+// Helper to format date as YYYY-MM-DD
+const formatDate = (date: Date): string => {
+  return date.toISOString().split('T')[0];
+};
 
-// Map events to time slots
-timeSlots.forEach(slot => {
-  const slotHour = parseInt(slot.hour24.split(':')[0]);
-  todayEvents.forEach(event => {
-    if (event.startHour === slotHour) {
-      slot.events.push(event);
-    }
+// Helper to format time
+const formatTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true 
   });
-});
+};
 
-const upcomingMeetings = todayEvents
-  .filter(event => event.startHour >= new Date().getHours())
-  .sort((a, b) => a.startHour - b.startHour)
-  .slice(0, 3);
+// Helper to get time range string
+const getTimeRange = (start: string, end: string): string => {
+  return `${formatTime(start)} - ${formatTime(end)}`;
+};
+
+// Generate time slots from 8 AM to 8 PM
+const generateTimeSlots = () => {
+  return Array.from({ length: 13 }, (_, i) => {
+    const hour = i + 8; // 8 AM to 8 PM
+    const time12 = hour > 12 ? `${hour - 12}:00 PM` : `${hour}:00 ${hour === 12 ? 'PM' : 'AM'}`;
+    return {
+      time: time12,
+      hour24: `${hour.toString().padStart(2, '0')}:00`,
+      events: [] as CalendarEvent[]
+    };
+  });
+};
 
 export function ExpandedCalendarWidget() {
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [timeSlots, setTimeSlots] = useState(generateTimeSlots());
+
+  // Format date for API
+  const dateString = formatDate(currentDate);
+
+  // Fetch events for the current date
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`http://localhost:5004/get_calendar_events?date=${dateString}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch calendar events');
+        }
+        const data = await response.json();
+        setEvents(data.events || []);
+      } catch (err) {
+        console.error('Error fetching calendar events:', err);
+        setError('Failed to load calendar events');
+        // Fallback to sample data if API fails
+        setEvents([
+          {
+            id: '1',
+            title: 'Team Standup',
+            start_time: new Date(currentDate.setHours(10, 0, 0, 0)).toISOString(),
+            end_time: new Date(currentDate.setHours(10, 30, 0, 0)).toISOString(),
+            type: 'meeting',
+            attendees: ['John', 'Jane', 'Bob'],
+            location: 'Conference Room A'
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, [dateString]);
+
+  // Map events to time slots whenever events change
+  useEffect(() => {
+    const slots = generateTimeSlots();
+    const slotsWithEvents = slots.map(slot => {
+      const slotHour = parseInt(slot.hour24.split(':')[0]);
+      const slotEvents = events.filter(event => {
+        const eventStartHour = new Date(event.start_time).getHours();
+        const eventEndHour = new Date(event.end_time).getHours();
+        // Include events that overlap with this time slot
+        return eventStartHour <= slotHour && eventEndHour >= slotHour;
+      }).map(event => ({
+        ...event,
+        // Calculate duration in minutes
+        duration: (new Date(event.end_time).getTime() - new Date(event.start_time).getTime()) / (1000 * 60),
+        // Set a default color if not provided
+        color: event.color || 'border-blue-500 bg-blue-50'
+      }));
+      
+      return {
+        ...slot,
+        events: slotEvents
+      };
+    });
+    setTimeSlots(slotsWithEvents);
+  }, [events]);
+
+  // Get upcoming meetings (next 3 events after current time)
+  const now = new Date();
+  const upcomingMeetings = events
+    .filter(event => new Date(event.end_time) > now)
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    .slice(0, 3);
+
+  // Navigation functions
+  const goToPreviousDay = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() - 1);
+    setCurrentDate(newDate);
+  };
+
+  const goToNextDay = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + 1);
+    setCurrentDate(newDate);
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
       {/* Main Calendar View - Takes up 3 columns */}
       <div className="lg:col-span-3">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-medium">Today - Saturday, September 20, 2025</h3>
+          <h3 className="font-medium">Today - {currentDate.toLocaleDateString()}</h3>
           <div className="flex gap-2">
             <Button size="sm" variant="outline">
               <Plus className="h-4 w-4 mr-2" />
@@ -112,6 +172,17 @@ export function ExpandedCalendarWidget() {
             <Button size="sm">
               <Shield className="h-4 w-4 mr-2" />
               Defend Focus
+            </Button>
+            <Button size="sm" onClick={goToPreviousDay}>
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Previous Day
+            </Button>
+            <Button size="sm" onClick={goToNextDay}>
+              <ChevronRight className="h-4 w-4 mr-2" />
+              Next Day
+            </Button>
+            <Button size="sm" onClick={goToToday}>
+              Today
             </Button>
           </div>
         </div>
@@ -132,8 +203,8 @@ export function ExpandedCalendarWidget() {
                     {slot.events.map((event) => (
                       <div
                         key={event.id}
-                        className={`p-3 rounded-lg border-l-4 cursor-pointer hover:shadow-sm transition-shadow ${event.color}`}
-                        style={{ height: `${Math.max(event.duration * 60, 60)}px` }}
+                        className={`p-3 rounded-lg border-l-4 cursor-pointer hover:shadow-sm transition-shadow ${event.color || 'border-gray-300 bg-gray-50'}`}
+                        style={{ minHeight: '60px' }}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <h4 className="font-medium text-sm">{event.title}</h4>

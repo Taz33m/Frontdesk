@@ -26,6 +26,7 @@ import traceback
 
 # Flask imports
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 # Load environment variables
 load_dotenv('googleAPIkey.env')
@@ -44,7 +45,7 @@ CONFIG = {
     'max_content_length': 30000,  # Max content length for AI processing
     'summary_retry_attempts': 3,  # Number of times to retry AI summary generation
     'summary_retry_delay': 2,  # Seconds to wait between retry attempts
-    'api_server_port': 5004,  # Port for Flask API server
+    'api_server_port': 5000,  # Port for Flask API server
     'api_server_host': '0.0.0.0',  # Host for Flask API server
     'google_project_id': None,  # Google Cloud Project ID (auto-detected if None)
 }
@@ -1088,8 +1089,23 @@ def get_calendar_events_for_date(date_str=None, timezone='UTC'):
     except Exception as e:
         return None, f"Error fetching calendar events: {str(e)}"
 
-# Create Flask app
+# Initialize Flask app
 app = Flask(__name__)
+
+# Configure CORS to allow requests from frontend
+from flask_cors import CORS
+CORS(app, resources={
+    r"/get_calendar_events": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    },
+    r"/emails": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 @app.route('/health', methods=['GET'])
 def health_check():

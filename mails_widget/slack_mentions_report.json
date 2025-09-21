@@ -1,0 +1,29 @@
+{
+  "generated_at": "2025-09-21T06:58:42.770961",
+  "total_mentions": 0,
+  "actual_mentions_count": 0,
+  "mentions": [
+    {
+      "timestamp": "1758452322.770887",
+      "date": "2025-09-21 06:58:42",
+      "user": "system",
+      "user_name": "System",
+      "text": "Congratulations! No unread mentions found. You're all caught up!",
+      "channel_id": "system",
+      "channel_name": "system",
+      "channel_type": "System",
+      "mention_type": "none",
+      "message_type": "system"
+    }
+  ],
+  "summary": {
+    "ai_summary": "Great news! No unread mentions found. You're all caught up!",
+    "total_count": 0,
+    "mention_breakdown": {},
+    "priority_level": "none",
+    "key_actions": [
+      "Enjoy your free time!",
+      "Consider catching up on other tasks"
+    ]
+  }
+}

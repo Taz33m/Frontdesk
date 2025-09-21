@@ -1,5 +1,4 @@
 // Utility functions for handling email data
-
 interface EmailEvent {
   id: string;
   email_id: string;
@@ -13,13 +12,11 @@ interface EmailEvent {
   event_type: string;
   priority: number;
 }
-
 interface EmailAttachment {
   filename: string;
   size_bytes: number;
   mime_type: string;
 }
-
 export interface Email {
   id: string;
   thread_id: string;
@@ -45,7 +42,6 @@ export interface Email {
     priority: number;
   }>;
 }
-
 export interface EmailMonitorData {
   monitor_started: string;
   last_updated: string;
@@ -63,7 +59,6 @@ export interface EmailMonitorData {
   };
   emails: Email[];
 }
-
 // Format time to relative time (e.g., "2m ago", "3h ago", "2d ago")
 export const formatRelativeTime = (dateString: string): string => {
   const date = new Date(dateString);
@@ -87,14 +82,12 @@ export const formatRelativeTime = (dateString: string): string => {
   const diffInDays = Math.floor(diffInHours / 24);
   return `${diffInDays}d ago`;
 };
-
 // Convert priority number to human-readable format
 export const getPriorityLabel = (priority: number): string => {
   if (priority >= 8) return 'High';
   if (priority >= 4) return 'Normal';
   return 'Low';
 };
-
 // Parse the email's sender name from the "Name <email@example.com>" format
 export const parseSenderName = (sender: string): string => {
   const match = sender.match(/^"?([^"]*?)"?\s*<[^>]+>$/);
@@ -103,7 +96,6 @@ export const parseSenderName = (sender: string): string => {
   }
   return sender.split('@')[0];
 };
-
 // Interface for the transformed email data used in the UI
 export interface TransformedEmail {
   id: string;
@@ -126,7 +118,6 @@ export interface TransformedEmail {
   }>;
   hasAttachments: boolean;
 }
-
 // Transform the email data for the UI
 export const transformEmailForUI = (email: Email): TransformedEmail => {
   // Ensure we have valid values for required fields
@@ -143,7 +134,6 @@ export const transformEmailForUI = (email: Email): TransformedEmail => {
     summary: email.summary || '',
     attachments: Array.isArray(email.attachments) ? email.attachments : []
   };
-
   // Process attachments with type safety
   const attachments = safeEmail.attachments.map(attachment => ({
     id: attachment.filename || `file-${Math.random().toString(36).substr(2, 9)}`,
@@ -154,7 +144,6 @@ export const transformEmailForUI = (email: Email): TransformedEmail => {
     size: typeof attachment.size_bytes === 'number' ? attachment.size_bytes : 0,
     url: '#' // We don't have actual download URLs in the JSON
   }));
-
   return {
     id: safeEmail.id,
     sender: parseSenderName(safeEmail.sender),
@@ -169,33 +158,29 @@ export const transformEmailForUI = (email: Email): TransformedEmail => {
     hasAttachments: attachments.length > 0
   };
 };
-
-// Fetch email data from the API
+// Fetch email data from the local JSON file
 // Returns a properly typed EmailMonitorData object
-// Throws an error if the request fails or the response is invalid
 export async function fetchEmailData(): Promise<EmailMonitorData> {
   try {
-    const response = await fetch('/api/emails');
+    // Import the JSON file directly - Vite will handle this at build time
+    const response = await fetch('/mails_widget/emails_monitor.json');
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`Failed to load email data: ${response.status} ${response.statusText}`);
     }
     
-    const responseData = await response.json();
+    const data = await response.json();
     
-    // If the response has a data property, use that (common in API responses)
-    const data = responseData.data || responseData;
-    
-    // Ensure the response has the expected structure
+    // Ensure the data has the expected structure
     if (!data || typeof data !== 'object') {
-      throw new Error('Invalid response format from server');
+      throw new Error('Invalid data format in emails_monitor.json');
     }
     
-    // Transform the response to match the EmailMonitorData interface
+    // Transform the data to match the EmailMonitorData interface
     return {
       monitor_started: data.monitor_started || new Date().toISOString(),
       last_updated: data.last_updated || new Date().toISOString(),
-      total_emails: data.total_emails || 0,
+      total_emails: Array.isArray(data.emails) ? data.emails.length : 0,
       config: {
         poll_interval: data.config?.poll_interval || 30,
         enable_summary: data.config?.enable_summary !== false,
@@ -207,11 +192,11 @@ export async function fetchEmailData(): Promise<EmailMonitorData> {
         summary_retry_attempts: data.config?.summary_retry_attempts || 3,
         summary_retry_delay: data.config?.summary_retry_delay || 2
       },
-      emails: data.emails || []
+      emails: Array.isArray(data.emails) ? data.emails : []
     };
     
   } catch (error) {
-    console.error('Error in fetchEmailData:', error);
+    console.error('Error loading email data:', error);
     
     // Return a minimal valid response structure
     return {

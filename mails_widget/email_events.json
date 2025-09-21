@@ -1,8 +1,50 @@
 {
   "database_created": "2025-09-20T23:16:01.142303",
-  "last_updated": "2025-09-21T00:02:59.892329",
-  "total_events": 29,
+  "last_updated": "2025-09-21T07:34:32.987120",
+  "total_events": 32,
   "events": [
+    {
+      "id": "1996c0d632ed352b_31",
+      "email_id": "1996c0d632ed352b",
+      "email_subject": "Delivery Status Notification (Failure)",
+      "email_sender": "Mail Delivery Subsystem <mailer-daemon@googlemail.com>",
+      "email_date": "2025-09-21T04:34:00-07:00",
+      "event_description": "Delivery Failure Notification (Failure) – email received",
+      "event_date": "2025-09-21",
+      "event_time": "04:34",
+      "event_location": "",
+      "event_type": "other",
+      "priority": 8,
+      "extracted_at": "2025-09-21T07:34:32.987102"
+    },
+    {
+      "id": "1996c0c948fcf92b_30",
+      "email_id": "1996c0c948fcf92b",
+      "email_subject": "Delivery Status Notification (Failure)",
+      "email_sender": "Mail Delivery Subsystem <mailer-daemon@googlemail.com>",
+      "email_date": "2025-09-21T04:33:07-07:00",
+      "event_description": "Delivery Status Notification (Failure) email received",
+      "event_date": "2025-09-21",
+      "event_time": "04:33",
+      "event_location": "",
+      "event_type": "other",
+      "priority": 5,
+      "extracted_at": "2025-09-21T07:33:29.246447"
+    },
+    {
+      "id": "1996bc302d986736_29",
+      "email_id": "1996bc302d986736",
+      "email_subject": "Security alert",
+      "email_sender": "Google <no-reply@accounts.google.com>",
+      "email_date": "2025-09-21T10:12:45+00:00",
+      "event_description": "Security alert notification from Google",
+      "event_date": "2025-09-21",
+      "event_time": "10:12",
+      "event_location": "Amphitheatre Parkway, Mountain View, CA 94043, USA",
+      "event_type": "other",
+      "priority": 9,
+      "extracted_at": "2025-09-21T06:13:18.256916"
+    },
     {
       "id": "1996a4cff8a99c74_28",
       "email_id": "1996a4cff8a99c74",

@@ -1,9 +1,13 @@
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { Settings, Zap, BarChart3 } from "lucide-react";
+import { Settings, Zap, BarChart3, LogOut } from "lucide-react";
 
-export function TopBar() {
+interface TopBarProps {
+  onLogout?: () => void;
+}
+
+export function TopBar({ onLogout }: TopBarProps) {
   const today = new Date();
   const dateString = today.toLocaleDateString('en-US', { 
     weekday: 'long',
@@ -13,11 +17,8 @@ export function TopBar() {
 
   return (
     <div className="flex items-center justify-between p-6 bg-white border-b border-gray-100">
-      {/* Quick Navigation (left) */}
-      <div className="flex gap-2">
-        <Button variant="ghost" size="sm">Week</Button>
-        <Button variant="ghost" size="sm">Month</Button>
-      </div>
+      {/* Spacer to balance the layout */}
+      <div className="w-20"></div>
 
       {/* Today + Date (center) */}
       <div className="text-center">
@@ -48,6 +49,11 @@ export function TopBar() {
           <DropdownMenuItem>
             <BarChart3 className="mr-2 h-4 w-4" />
             Batch Mode
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
           </DropdownMenuItem>
           <DropdownMenuItem>
             <BarChart3 className="mr-2 h-4 w-4" />

@@ -8,7 +8,7 @@ interface FlippableCardProps {
   title: string;
   count?: number;
   frontContent: ReactNode;
-  backContent: ReactNode;
+  backContent: ReactNode | null;
   expandedContent?: ReactNode;
   className?: string;
   onExpand?: () => void;
@@ -31,8 +31,14 @@ export function FlippableCard({
   const [internalIsFlipped, setInternalIsFlipped] = useState(false);
   const isControlled = controlledIsFlipped !== undefined;
   const isFlipped = isControlled ? controlledIsFlipped : internalIsFlipped;
+  
+  // Disable flipping if there's no back content
+  const canFlip = backContent !== null;
 
   const handleCardClick = (e: React.MouseEvent) => {
+    // Don't do anything if flipping is disabled
+    if (!canFlip) return;
+    
     const target = e.target as HTMLElement;
     
     // Don't flip if clicking on interactive elements
@@ -65,7 +71,7 @@ export function FlippableCard({
 
   return (
     <motion.div
-      className={`relative cursor-pointer ${className}`}
+      className={`relative ${canFlip ? 'cursor-pointer' : ''} ${className}`}
       onClick={handleCardClick}
       whileHover={{ 
         y: -3, 
@@ -130,63 +136,65 @@ export function FlippableCard({
           </div>
         </div>
 
-        {/* Back Side */}
-        <motion.div 
-          className="w-full bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden"
-          style={{ 
-            backfaceVisibility: "hidden",
-            transform: "rotateY(180deg)",
-            display: isFlipped ? "block" : "none"
-          }}
-          initial={{ height: "320px" }}
-          animate={{ 
-            height: isFlipped ? "auto" : "320px"
-          }}
-          transition={{ 
-            duration: 0.4, 
-            ease: [0.25, 0.46, 0.45, 0.94], // Smooth easing for height expansion
-            type: "tween"
-          }}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <div className="flex items-center gap-2">
-              <div className="text-blue-600">{icon}</div>
-              <h3 className="font-medium text-gray-900">{title} - Details</h3>
-            </div>
-            {onExpand && (
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                className="h-8 w-8 p-0 opacity-60 hover:opacity-100"
-                data-expand-button
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-          
-          {/* Content */}
-          <div className="p-4">
-            <AnimatePresence>
-              {isFlipped && (
-                <motion.div
-                  initial={{ opacity: 0, y: 16, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -16, scale: 0.98 }}
-                  transition={{ 
-                    duration: 0.35, 
-                    delay: 0.25,
-                    ease: [0.25, 0.46, 0.45, 0.94], // Smooth content entrance
-                    type: "tween"
-                  }}
+        {/* Back Side - Only render if backContent exists */}
+        {backContent && (
+          <motion.div 
+            className="w-full bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden"
+            style={{ 
+              backfaceVisibility: "hidden",
+              transform: "rotateY(180deg)",
+              display: isFlipped ? "block" : "none"
+            }}
+            initial={{ height: "320px" }}
+            animate={{ 
+              height: isFlipped ? "auto" : "320px"
+            }}
+            transition={{ 
+              duration: 0.4, 
+              ease: [0.25, 0.46, 0.45, 0.94], // Smooth easing for height expansion
+              type: "tween"
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="text-blue-600">{icon}</div>
+                <h3 className="font-medium text-gray-900">{title} - Details</h3>
+              </div>
+              {onExpand && (
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-8 w-8 p-0 opacity-60 hover:opacity-100"
+                  data-expand-button
                 >
-                  {backContent}
-                </motion.div>
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
               )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
+            </div>
+            
+            {/* Content */}
+            <div className="p-4">
+              <AnimatePresence>
+                {isFlipped && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -16, scale: 0.98 }}
+                    transition={{ 
+                      duration: 0.35, 
+                      delay: 0.25,
+                      ease: [0.25, 0.46, 0.45, 0.94], // Smooth content entrance
+                      type: "tween"
+                    }}
+                  >
+                    {backContent}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </motion.div>
   );

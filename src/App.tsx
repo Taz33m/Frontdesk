@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { TopBar } from "./components/TopBar";
 import MailIcon from "./assets/Mail.png";
 import CalendarIcon from "./assets/Calendar.png";
@@ -11,11 +13,28 @@ import { ExpandedMailWidget } from "./components/widgets/ExpandedMailWidget";
 import { ExpandedTasksWidget } from "./components/widgets/ExpandedTasksWidget";
 import { ExpandedCalendarWidget } from "./components/widgets/ExpandedCalendarWidget";
 import { ExpandedSuggestionsWidget } from "./components/widgets/ExpandedSuggestionsWidget";
+import Login from "./pages/Login";
+import Onboarding from "./pages/Onboarding";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { hasCompletedOnboarding, clearOnboardingStatus } from "./utils/auth";
 
 type ExpandedWidget = "mail" | "tasks" | "calendar" | "suggestions" | null;
 
-export default function App() {
+// Component to handle onboarding redirection
+const OnboardingRedirect = () => {
+  const location = useLocation();
+  const hasOnboarded = hasCompletedOnboarding();
+  
+  if (!hasOnboarded && !location.pathname.startsWith('/onboarding')) {
+    return <Navigate to="/onboarding" replace />;
+  }
+  
+  return <Navigate to="/dashboard" replace />;
+};
+
+const Dashboard = () => {
   const [expandedWidget, setExpandedWidget] = useState<ExpandedWidget>(null);
+  const { logout } = useAuth();
 
   const handleExpand = (widget: ExpandedWidget) => {
     setExpandedWidget(widget);
@@ -23,6 +42,11 @@ export default function App() {
 
   const handleCloseModal = () => {
     setExpandedWidget(null);
+  };
+
+  const handleLogout = () => {
+    clearOnboardingStatus();
+    logout();
   };
 
   const renderModalContent = () => {
@@ -72,34 +96,70 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopBar />
-      
-      <div className="p-6">
-        <div className="max-w-6xl mx-auto">
-          {/* Main 2x2 Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <MailWidget 
-              onExpand={() => handleExpand("mail")} 
-              icon={<img src={MailIcon} alt="Mail" className="h-5 w-5" />}
-            />
-            <TasksWidget onExpand={() => handleExpand("tasks")} />
-            <CalendarWidget 
-              onExpand={() => handleExpand("calendar")} 
-              icon={<img src={CalendarIcon} alt="Calendar" className="h-5 w-5" />}
-            />
-            <SuggestionsWidget onExpand={() => handleExpand("suggestions")} />
-          </div>
+      <TopBar onLogout={handleLogout} />
+      <main className="container mx-auto p-4 max-w-4xl">
+        {/* Top row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <MailWidget onExpand={() => handleExpand("mail")} />
+          <TasksWidget onExpand={() => handleExpand("tasks")} />
         </div>
-      </div>
+        
+        {/* Bottom row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CalendarWidget onExpand={() => handleExpand("calendar")} />
+          <SuggestionsWidget onExpand={() => handleExpand("suggestions")} />
+        </div>
+      </main>
 
-      {/* Modal Overlay */}
       <WidgetModal
         isOpen={expandedWidget !== null}
         onClose={handleCloseModal}
-        icon={getModalIcon()}
+        icon={
+          expandedWidget === "mail" ? (
+            <img src={MailIcon} alt="Mail" className="w-6 h-6" />
+          ) : (
+            <img src={CalendarIcon} alt="Calendar" className="w-6 h-6" />
+          )
+        }
         title={getModalTitle()}
-        children={renderModalContent()}
-      />
+      >
+        {renderModalContent()}
+      </WidgetModal>
     </div>
+  );
+};
+
+// Wrapper component to handle protected routes and onboarding
+export default function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/onboarding" element={
+            <ProtectedRoute>
+              <Onboarding />
+            </ProtectedRoute>
+          } />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <OnboardingRedirect />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </Router>
   );
 }

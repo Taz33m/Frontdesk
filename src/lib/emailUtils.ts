@@ -90,8 +90,8 @@ export const formatRelativeTime = (dateString: string): string => {
 
 // Convert priority number to human-readable format
 export const getPriorityLabel = (priority: number): string => {
-  if (priority >= 4) return 'High';
-  if (priority >= 2) return 'Normal';
+  if (priority >= 8) return 'High';
+  if (priority >= 4) return 'Normal';
   return 'Low';
 };
 
